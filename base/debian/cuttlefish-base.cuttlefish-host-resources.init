@@ -169,7 +169,13 @@ manage_nft_rule() {
                 return 1
             fi
             # Add the rule and store the handle.
-            handle=$(nft -j -e add rule "$family" "$table" "$chain" "$contents" | jq -r '.nftables[] | select(has("add")) | .add.rule.handle')
+            handle=$(nft -e -a add rule "$family" "$table" "$chain" "$contents" | sed -E -n 's/.*handle ([0-9]+).*/\1/p')
+            case "$handle" in
+                "" | *[!0-9]*)
+                    echo "Failed to obtain valid handle for nft rule: $family $table $chain $contents" >&2
+                    handle=""
+                    ;;
+            esac
             echo "$handle" > "$handle_file"
             ;;
         delete)
